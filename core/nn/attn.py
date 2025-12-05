@@ -6,6 +6,8 @@ from core.pos_embed.rotary_embed import apply_rotary_emb
 
 
 # GQA with KV caching
+# Note this is the naive implementation of the KV cache,
+# the optimized version is Multi-head Latent Attention introduced in Deepseek V3, after Llama3 was introduced.
 class GroupedQueryAttention(nn.Module):
     def __init__(self, params: ParamsLLama3):
         super(GroupedQueryAttention, self).__init__()
