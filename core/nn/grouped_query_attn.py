@@ -56,8 +56,8 @@ class GroupedQueryAttention(nn.Module):
         self.cache_k[:B, start_pos: start_pos + T] = k
         self.cache_v[:B, start_pos: start_pos + T] = v
         # retrieve complete k & v from cache for attention
-        k = self.cache_k[:B, start_pos: start_pos + T]
-        v = self.cache_v[:B, start_pos: start_pos + T]
+        k = self.cache_k[:B, : start_pos + T]
+        v = self.cache_v[:B, : start_pos + T]
 
         # In these runs we duplicate the KV heads for MQA in all GPUs (llama2)
         k = torch.repeat_interleave(
