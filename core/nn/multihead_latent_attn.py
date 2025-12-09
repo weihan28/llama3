@@ -64,13 +64,14 @@ class MultiHeadLatentAttention(nn.Module):
         k_rope = self.W_kr(x)  # [B, t, decoupled_dim]
         k_rope = apply_rotary_emb_mla(k_rope.unsqueeze(2), freqs_cis)  # [B, t, 1, decoupled_dim]
 
-        # write cache
-        self.cache_kv_compressed[:B, start_pos: start_pos + t] = kv_compressed
-        self.cache_k_rope[:B, start_pos: start_pos + t] = k_rope
+        if not self.training:
+            # write cache
+            self.cache_kv_compressed[:B, start_pos: start_pos + t] = kv_compressed
+            self.cache_k_rope[:B, start_pos: start_pos + t] = k_rope
 
-        # retrieve cache
-        kv_compressed = self.cache_kv_compressed[:B, : start_pos + t] # [B, T, 1, decoupled_dim], where T>=t
-        k_rope = self.cache_k_rope[:B, : start_pos + t] # [B, T, 1, decoupled_dim]
+            # retrieve cache
+            kv_compressed = self.cache_kv_compressed[:B, : start_pos + t] # [B, T, 1, decoupled_dim], where T>=t
+            k_rope = self.cache_k_rope[:B, : start_pos + t] # [B, T, 1, decoupled_dim]
 
         # https://discuss.pytorch.org/t/torch-repeat-and-torch-expand-which-to-use/27969
         k_rope = k_rope.expand(-1, -1, self.params.n_heads, -1)  # [B, T, n_head, decoupled_dim]
@@ -125,6 +126,7 @@ if __name__ == '__main__':
     print(params)
 
     mla = MultiHeadLatentAttention(params).to(device)
+    mla.eval() # inference mode
 
     freqs_cis = precompute_freqs_cis_mla(params).to(device)
     print("Precomputed freqs_cis shape:", freqs_cis.shape)
