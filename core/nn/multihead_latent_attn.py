@@ -12,11 +12,13 @@ class MultiHeadLatentAttention(nn.Module):
         # Q low rank compression matrices
         self.W_dq = nn.Linear(params.dim, params.q_compress_dim, bias=False)
         self.W_uq = nn.Linear(params.q_compress_dim, params.n_heads * params.dim_head, bias=False)
+        self.norm_q = nn.RMSNorm(params.q_compress_dim, eps=params.norm_eps)
 
         # KV low rank compression matrices
         self.W_dkv = nn.Linear(params.dim, params.kv_compress_dim, bias=False)
         self.W_uk = nn.Linear(params.q_compress_dim, params.n_heads * params.dim_head, bias=False)
         self.W_uv = nn.Linear(params.q_compress_dim, params.n_heads * params.dim_head, bias=False)
+        self.norm_kv = nn.RMSNorm(params.kv_compress_dim, eps=params.norm_eps)
 
         # Decoupled rope matrices
         self.W_qr = nn.Linear(params.q_compress_dim, params.n_heads * params.decoupled_dim, bias=False)
@@ -55,6 +57,10 @@ class MultiHeadLatentAttention(nn.Module):
         q_compressed = self.W_dq(x) # [B, t, q_compress_dim]
         kv_compressed = self.W_dkv(x) # [B, t, kv_compress_dim]
 
+        # normalization after compressed latent vectors
+        kv_compressed = self.norm_kv(kv_compressed)
+        q_compressed = self.norm_q(q_compressed)
+
         # reshape decoupled query
         q_rope = self.W_qr(q_compressed)  # [B, t, n_head * decoupled_dim]
         q_rope = q_rope.view(B, t, self.params.n_heads, -1)  # [B, t, n_head, decoupled_dim]
@@ -65,6 +71,7 @@ class MultiHeadLatentAttention(nn.Module):
         k_rope = apply_rotary_emb_mla(k_rope.unsqueeze(2), freqs_cis)  # [B, t, 1, decoupled_dim]
 
         if not self.training:
+            print("Getting kv from cache")
             # write cache
             self.cache_kv_compressed[:B, start_pos: start_pos + t] = kv_compressed
             self.cache_k_rope[:B, start_pos: start_pos + t] = k_rope
@@ -72,6 +79,8 @@ class MultiHeadLatentAttention(nn.Module):
             # retrieve cache
             kv_compressed = self.cache_kv_compressed[:B, : start_pos + t] # [B, T, 1, decoupled_dim], where T>=t
             k_rope = self.cache_k_rope[:B, : start_pos + t] # [B, T, 1, decoupled_dim]
+            print(f"Current kv_compressed shape: {kv_compressed.shape}")
+            print(f"Current k_rope_shape: {k_rope.shape}")
 
         # https://discuss.pytorch.org/t/torch-repeat-and-torch-expand-which-to-use/27969
         k_rope = k_rope.expand(-1, -1, self.params.n_heads, -1)  # [B, T, n_head, decoupled_dim]
