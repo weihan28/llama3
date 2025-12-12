@@ -143,3 +143,19 @@ v = v.transpose(1, 2)  # (B, T, n_heads, dim_head) -> (B, n_heads, T, dim_head)
 out = F.scaled_dot_product_attention(q, k, v, attn_mask=mask)  # (B, n_heads, T, dim_head)
 ```
 
+# Multi-head Latent Attention (MLA)
+source(Deepseek v2): https://arxiv.org/pdf/2405.04434
+
+<img src="attachments/mla_1.png" width="500"><br>
+instead of caching the keys and values, we cache a compressed latent vector during inference.
+We then generate the Keys and Values during runtime.
+
+<img src="attachments/mla_2.png" width="500"><br>
+<img src="attachments/mla_excalidraw.png" width="1000"><br>
+
+Hyper params from deepseek v2:<br>
+<img src="attachments/mla_3.png" width="500"><br>
+
+Cache Size:<br>
+<img src="attachments/mla_4.png" width="500"><br>
+
