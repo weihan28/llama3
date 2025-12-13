@@ -14,6 +14,13 @@ https://docs.pytorch.org/docs/stable/generated/torch.nn.SiLU.html
 
 https://medium.com/deeplearningmadeeasy/glu-gated-linear-unit-21e71cd52081
 
+has a gating function that performs element wise multiplication.
+
+learns:
+- Which hidden dimensions to amplify
+- Which to suppress
+- Context-dependent feature selection
+
 ## SwiGLU
 
 <img src="attachments/swiGLU.png" width="500">
@@ -31,7 +38,7 @@ class FeedForwardSwiGLU(nn.Module):
         self.proj = nn.Linear(params.ffn_dim, params.dim, bias=False)
 
     def forward(self, x):
-        return self.proj(F.silu(self.w1(x)) + self.w2(x))
+        return self.proj(F.silu(self.w1(x)) * self.w2(x)) # element wise multiplication
 ```
 
 basically GLU but using swish instead of sigmoid.
@@ -142,20 +149,3 @@ v = v.transpose(1, 2)  # (B, T, n_heads, dim_head) -> (B, n_heads, T, dim_head)
 # Note that the n_heads are all processed in parallel
 out = F.scaled_dot_product_attention(q, k, v, attn_mask=mask)  # (B, n_heads, T, dim_head)
 ```
-
-# Multi-head Latent Attention (MLA)
-source(Deepseek v2): https://arxiv.org/pdf/2405.04434
-
-<img src="attachments/mla_1.png" width="500"><br>
-instead of caching the keys and values, we cache a compressed latent vector during inference.
-We then generate the Keys and Values during runtime.
-
-<img src="attachments/mla_2.png" width="500"><br>
-<img src="attachments/mla_excalidraw.png" width="1000"><br>
-
-Hyper params from deepseek v2:<br>
-<img src="attachments/mla_3.png" width="500"><br>
-
-Cache Size:<br>
-<img src="attachments/mla_4.png" width="500"><br>
-

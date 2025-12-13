@@ -22,7 +22,7 @@ class FeedForwardSwiGLU(nn.Module):
         self.proj = nn.Linear(params.ffn_dim, params.dim, bias=False)
 
     def forward(self, x):
-        return self.proj(F.silu(self.w1(x)) + self.w2(x))
+        return self.proj(F.silu(self.w1(x)) * self.w2(x))
 
 
 if __name__ == "__main__":
