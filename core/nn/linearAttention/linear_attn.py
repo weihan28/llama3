@@ -45,7 +45,7 @@ class MaskedLinearAttention(LinearAttention):
         k_sum = k.cumsum(dim=1) # [B, T, H, D], Σ_t (Ki^T)
         z = 1 / torch.einsum("bthd, bhd -> bth", q, k_sum) # Σ_d (q_t @ Σ_t (Ki^T))
 
-        # problem here, we cannot implement a straightforward mask efficiently
+        # problem here, we cannot implement a straightforward mask efficiently without a custom kernel
         raise NotImplementedError
 
 if __name__ == "__main__":
