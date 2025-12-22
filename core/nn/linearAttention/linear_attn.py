@@ -1,5 +1,5 @@
 import torch
-from torch import nn
+from torch import nn, overrides
 from torch.nn import functional as F
 
 
@@ -25,14 +25,28 @@ class LinearAttention(nn.Module):
     def forward(self, x) -> torch.Tensor:
         # Q @ K^T @ V = [.., T, D] @ [.., D, T] @ [.., T, M]
 
-        q = self.WQ(x) # [B, T, H, D]
-        k = self.WK(x) # [B, T, H, D]
+        q = elu_feature_map(self.WQ(x)) # [B, T, H, D]
+        k = elu_feature_map(self.WK(x)) # [B, T, H, D]
         v = self.WV(x) # [B, T, H, M]
 
         kv = torch.einsum("bthd, bthm -> bhdm", k, v) # K^T @ V
-        z = 1/torch.einsum("bthd, bhd -> bth", q, k.sum(1)) # Σ_d q_t @ (K1+K2..KT)^T = Σ_d (q_t @ Σ_t (K^T))
+        z = 1/torch.einsum("bthd, bhd -> bth", q, k.sum(1)) # Σ_d q_t @ (K1+K2..KT)^T = Σ_d (q_t @ Σ_T (Ki^T))
         o = torch.einsum("bthd, bhdm, bth-> bthm", q, kv, z) # Σ_d (Q_bthd KV_bhdm Z_bth)
         return self.proj(o) # [B, T, H, e]
+
+class MaskedLinearAttention(LinearAttention):
+    @overrides
+    def forward(self, x) -> torch.Tensor:
+        q = elu_feature_map(self.WQ(x))  # [B, T, H, D]
+        k = elu_feature_map(self.WK(x))  # [B, T, H, D]
+        v = self.WV(x)  # [B, T, H, M]
+
+        # q_t @ (K1 + K2..Kt)
+        k_sum = k.cumsum(dim=1) # [B, T, H, D], Σ_t (Ki^T)
+        z = 1 / torch.einsum("bthd, bhd -> bth", q, k_sum) # Σ_d (q_t @ Σ_t (Ki^T))
+
+        # problem here, we cannot implement a straightforward mask efficiently
+        raise NotImplementedError
 
 if __name__ == "__main__":
     from types import SimpleNamespace
