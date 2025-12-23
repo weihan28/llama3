@@ -104,19 +104,19 @@ class MultiHeadLatentAttention(nn.Module):
                                           self.head_dim)  # [B, T, n_heads, head_dim]
 
         # concatenate decoupled rotational embeds
-        q = torch.cat((q, q_rope), dim=-1)  # [B, T, n_heads, head_dim + decoupled_dim]
+        q = torch.cat((q, q_rope), dim=-1)  # [B, t, n_heads, head_dim + decoupled_dim]
         k = torch.cat((k, k_rope), dim=-1)  # [B, T, n_heads, head_dim + decoupled_dim]
 
         # attention
-        q = q.transpose(1, 2)  # [B, n_heads, T, head_dim + decoupled_dim]
+        q = q.transpose(1, 2)  # [B, n_heads, t, head_dim + decoupled_dim]
         k = k.transpose(1, 2)  # [B, n_heads, T, head_dim + decoupled_dim]
         v = v.transpose(1, 2)  # [B, n_heads, T, head_dim]
-        out = F.scaled_dot_product_attention(q, k, v, attn_mask=mask)  # [B, n_heads, T, head_dim]
+        out = F.scaled_dot_product_attention(q, k, v, attn_mask=mask)  # [B, n_heads, t, head_dim]
 
         # project out
-        out = out.transpose(1, 2).contiguous()  # [B, T, n_heads,  head_dim]
-        out = out.view(*x.shape[:2], self.n_heads * self.head_dim)  # [B, T, n_heads * head_dim]
-        return self.W_o(out)  # [B, T, dim]
+        out = out.transpose(1, 2).contiguous()  # [B, t, n_heads,  head_dim]
+        out = out.view(*x.shape[:2], self.n_heads * self.head_dim)  # [B, t, n_heads * head_dim]
+        return self.W_o(out)  # [B, t, dim]
 
 
 if __name__ == '__main__':
