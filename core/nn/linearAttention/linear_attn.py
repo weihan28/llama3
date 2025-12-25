@@ -67,6 +67,7 @@ class MaskedLinearAttention(LinearAttention):
         )
 
 
+    @eval
     @override
     def forward(self, x, start_pos) -> torch.Tensor:
         assert x.ndim == 3, "x must have 3 dimensions, [B,T,D]"
