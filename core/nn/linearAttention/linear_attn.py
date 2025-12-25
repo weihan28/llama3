@@ -5,8 +5,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-K_SUM = "K_SUM"
-KV_SUM = "KV_SUM"
+CACHE_K_SUM = "CACHE_K_SUM"
+CACHE_KV_SUM = "CACHE_KV_SUM"
 
 
 class LinearAttentionLayer(nn.Module, ABC):
@@ -15,22 +15,12 @@ class LinearAttentionLayer(nn.Module, ABC):
         super().__init__()
         self.feature_map = feature_map
 
-        self.register_buffer(K_SUM, None, persistent=False)
-        self.register_buffer(KV_SUM, None, persistent=False)
-
-    def _get_cache(self, name: str):
-        cached = getattr(self, name)
-        if self.training or cached is None:
-            return 0
-        return cached
-
-    def _set_cache(self, name, value):
-        if not self.training:
-            setattr(self, name, value)
+        self.register_buffer(CACHE_K_SUM, torch.tensor(0), persistent=False)
+        self.register_buffer(CACHE_KV_SUM, torch.tensor(0), persistent=False)
 
     def reset_cache(self) -> None:
-        setattr(self, K_SUM, None)
-        setattr(self, KV_SUM, None)
+        setattr(self, CACHE_K_SUM, torch.tensor(0))
+        setattr(self, CACHE_KV_SUM, torch.tensor(0))
 
     @abstractmethod
     def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
@@ -61,14 +51,16 @@ class LinearAttention(LinearAttentionLayer):
 
         # denominator: q_i @ Σ_{j=0..Tk}(k_j)
         k_sum = k.sum(dim=1)  # [b,h,d]: Σ_{j=Sk..Tk} (k_j)
-        k_sum += self._get_cache(K_SUM)  # Σ_{j=0..Sk} k_j + Σ_{j=Sk..Tk} k_j
-        self._set_cache(K_SUM, k_sum)
+        if not self.training:
+            k_sum += getattr(self, CACHE_K_SUM)  # Σ_{j=0..Sk} k_j + Σ_{j=Sk..Tk} k_j
+            setattr(self, CACHE_K_SUM, k_sum)
         z = 1 / torch.einsum("bthd, bhd -> bth", q, k_sum)
 
         # numerator: q_i @ Σ_{j=0..Tk}(k_j v_j)
         kv_sum = torch.einsum("bthd, bthm -> bhdm", k, v)  # K.T @ V = Σ_{j=Sk..Tk} (Kj ⨂ Vj)
-        kv_sum += self._get_cache(KV_SUM)  # Σ_{j=0..Sk} (Kj ⨂ Vj) + Σ_{j=Sk..Tk} (Kj ⨂ Vj)
-        self._set_cache(KV_SUM, kv_sum)
+        if not self.training:
+            kv_sum += getattr(self, CACHE_KV_SUM)  # Σ_{j=0..Sk} (Kj ⨂ Vj) + Σ_{j=Sk..Tk} (Kj ⨂ Vj)
+            setattr(self, CACHE_KV_SUM, kv_sum)
         return torch.einsum("bthd, bhdm, bth-> bthm", q, kv_sum, z)
 
 
@@ -91,14 +83,16 @@ class CausalLinearSelfAttention(LinearAttentionLayer):
 
         # denominator: q_i @ Σ_{t=0..i}(k_t)
         k_sum = k.cumsum(dim=1)  # Σ_{j=Sk..i} (k_j)
-        k_sum += self._get_cache(K_SUM)  # Σ_{j=0..Sk} k_j + Σ_{j=Sk..i} k_j
-        self._set_cache(K_SUM, k_sum[:, -1:])
+        if not self.training:
+            k_sum += getattr(self, CACHE_K_SUM)  # Σ_{j=0..Sk} k_j + Σ_{j=Sk..i} k_j
+            setattr(self, CACHE_K_SUM, k_sum[:, -1:])
         z = 1 / torch.einsum("bthd, bthd -> bth", q, k_sum)
 
         # numerator: q_i @ Σ_{j=0..i}(k_j v_j)
         kv_sum = torch.einsum("bthd, bthm -> bthdm", k, v).cumsum(dim=-2)  # K.T @ V = Σ_{j=Sk..i} (Kj ⨂ Vj)
-        kv_sum += self._get_cache(KV_SUM)  # Σ_{j=0..Sk} (Kj ⨂ Vj) + Σ_{j=Sk..i} (Kj ⨂ Vj)
-        self._set_cache(KV_SUM, kv_sum[:, -1:])
+        if not self.training:
+            kv_sum += getattr(self, CACHE_KV_SUM)  # Σ_{j=0..Sk} (Kj ⨂ Vj) + Σ_{j=Sk..i} (Kj ⨂ Vj)
+            setattr(self, CACHE_KV_SUM, kv_sum[:, -1:])
         return torch.einsum("bthd, bthdm, bth-> bthm", q, kv_sum, z)
 
 
