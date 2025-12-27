@@ -9,3 +9,6 @@ the softmax is replaced with function mappings.
 
 <img src="attachments/hedgehog_2.png"></img>
 <img src="attachments/hedgehog_3.png"></img>
+
+# Low rank Linear Conversion with Attention Transfer
+<img src="attachments/hedgehog_4.png"></img>
