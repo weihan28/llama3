@@ -16,3 +16,16 @@ paper:
 # Solution
 
 <img src="attachments/mhc4.png" width="700">
+
+# Deepseek mHC hyperparameters
+
+<b>
+uses the same modules as deekseek-v3:
+<br> — Moe (Mixture of Expert with top_k routing)
+<br> — MLA (Multi-head Latent Attention)
+
+The only difference is that the residual network is replaced
+with the mHC block.
+
+<img src="attachments/mhc5.png" width="700">
+
