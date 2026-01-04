@@ -1,5 +1,5 @@
-from typing import Callable
 from abc import ABC, abstractmethod
+from typing import Callable
 
 import torch
 from torch import nn, Tensor
@@ -12,6 +12,7 @@ CACHE_KV_SUM = "CACHE_KV_SUM"
 # feature maps
 def elu_feature_map(x: Tensor, inplace: bool = False) -> Tensor:
     return F.elu(x, inplace=inplace) + 1
+
 
 def relu_feature_map(x: Tensor, inplace: bool = False) -> Tensor:
     return F.relu(x, inplace=inplace)

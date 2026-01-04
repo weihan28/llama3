@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 
-from core.nn.llama3.grouped_query_attn import GroupedQueryAttention
 from core.nn.llama3.ffn import FeedForwardSwiGLU, get_ffn_dim
+from core.nn.llama3.grouped_query_attn import GroupedQueryAttention
 from core.norm.rms_norm import RMSNorm
 from core.utils.params import ParamsLlama3
 

@@ -11,5 +11,6 @@ the softmax is replaced with function mappings.
 <img src="attachments/hedgehog_3.png"></img>
 
 # Low rank Linear Conversion with Attention Transfer
+
 <img src="attachments/hedgehog_4.png"></img>
 paper https://arxiv.org/pdf/2410.10254

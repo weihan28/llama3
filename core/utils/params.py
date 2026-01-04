@@ -47,11 +47,11 @@ class Attn:
 class GQA(Attn):
     n_kv_heads: int = 8
 
+
 @dataclass
 class LinearAttn(Attn):
     qk_dim: int = 128
     v_dim: int = 128
-
 
 
 # Multi-head Latent Attention

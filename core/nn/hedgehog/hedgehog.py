@@ -3,7 +3,8 @@ from typing import Callable
 import torch
 from torch import nn
 from torch.nn import functional as F
-from core.nn.attn import AttentionLayer
+
+from core.nn.hedgehog.attn import AttentionLayer
 
 
 # Attention Map and Loss Generation
@@ -76,14 +77,17 @@ class HedgehogAttention(nn.Module):
             if self.training:
                 self.true_attn_map = softmax_attention(q, k)
                 self.pred_attn_map = quadratic_linear_attn(self.fm_q(q), self.fm_k(k))
+
         self.base_attn.qkv_proj.register_forward_hook(hook)
 
 
 if __name__ == '__main__':
-    from core.nn.attn import NaiveQKVProj
+    from core.nn.hedgehog.attn import NaiveQKVProj
+
 
     def standard_attn(q, k, v, **kwargs):
         return F.scaled_dot_product_attention(q, k, v)
+
 
     attn_layer = AttentionLayer(
         attn=standard_attn,
@@ -101,10 +105,3 @@ if __name__ == '__main__':
     print(attn_layer.pred_attn_map.shape)
     loss = soft_label_cross_entropy(attn_layer.pred_attn_map, attn_layer.true_attn_map)
     print(loss)
-
-
-
-
-
-
-

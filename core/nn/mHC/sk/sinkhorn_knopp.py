@@ -11,6 +11,7 @@ def naive_sinkhorn_knopp(x, n_iters=4):
         x /= x.sum(axis=-1, keepdims=True, dtype=x.dtype)
     return x
 
+
 def sinkhorn_knopp(x, n_iters=4):
     """ Iterative sinkhorn_knopp algorithm.
 
@@ -24,7 +25,7 @@ def sinkhorn_knopp(x, n_iters=4):
     - the algorithm when scale is 1 is simply the normal sum of the corresponding row/col.
     - x.transpose(-1, -2) makes each row the column of x.
     """
-    x = torch.exp(x) # ensure non-negative
+    x = torch.exp(x)  # ensure non-negative
     row_scale = torch.ones(*x.shape[:-2], x.shape[-1], 1, device=x.device, dtype=x.dtype)
     col_scale = torch.ones_like(row_scale)
 
@@ -43,7 +44,7 @@ def sinkhorn_knopp_log(x, n_iters=4):
         col_scale = -torch.logsumexp(x + row_scale.unsqueeze(-1), dim=-2)
         row_scale = -torch.logsumexp(x.transpose(-1, -2) + col_scale.unsqueeze(-1), dim=-2)
 
-    return  torch.exp(row_scale.unsqueeze(-1) + x + col_scale.unsqueeze(-2))
+    return torch.exp(row_scale.unsqueeze(-1) + x + col_scale.unsqueeze(-2))
 
 
 if __name__ == '__main__':
@@ -62,11 +63,3 @@ if __name__ == '__main__':
     y = sinkhorn_knopp_log(x.clone().detach(), n_iters=4)
     print(y.sum(-1))
     print(y.sum(-2))
-
-
-
-
-
-
-
-
