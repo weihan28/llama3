@@ -5,6 +5,7 @@ import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
 
+
 CACHE_K_SUM = "CACHE_K_SUM"
 CACHE_KV_SUM = "CACHE_KV_SUM"
 

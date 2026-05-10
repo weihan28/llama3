@@ -1,6 +1,7 @@
 # Llama Architecture
 
 <img src="attachments/llama_architecture.png" width="500">
+<img src="attachments/hyperparam.png" width="500">
 
 This implementation is based on: https://github.com/uygarkurt/Llama-3-PyTorch/tree/main
 see repository on how to load the official llama weights into the model class.

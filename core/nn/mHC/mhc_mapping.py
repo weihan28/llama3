@@ -30,6 +30,8 @@ class MHCMapping(nn.Module):
     def forward(self, x):
         """ Dynamically generate mapping weights.
 
+        Alpha and beta are close to 0 when initialized.
+        So H_post is mult by 2 to ensure out is close to 1.
 
         Output shape:\n
         - H_pre of shape [b,t,n]\n
